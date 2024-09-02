@@ -1,11 +1,21 @@
 {
-  "name": "npm-down",
-  "version": "1.0.0",
+  "name": "npm-counts",
+  "version": "1.0.1",
   "main": "index.js",
+  "type": "module",
+  "bin": {
+    "npm-counts": "src/index.js"
+  },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",
   "license": "ISC",
-  "description": ""
+  "description": "",
+  "dependencies": {
+    "commander": "^12.1.0",
+    "inquirer": "^10.1.8",
+    "npm-counts": "^1.0.0",
+    "ora": "^8.1.0"
+  }
 }
