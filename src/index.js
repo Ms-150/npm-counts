@@ -7,6 +7,7 @@ import ora from "ora";
 import { getDownload } from "./util.js";
 import { fileURLToPath } from "url";
 import path, { dirname } from "path";
+import { getLocale } from "./locales.js";
 
 const program = new Command();
 
@@ -27,46 +28,59 @@ try {
   process.exit(1);
 }
 
+const userLocale = process.env.LANG || "en";
+const language = userLocale.startsWith("zh") ? "zh" : "en";
+
+const texts = getLocale(language);
+
 program
   .name("npm-counts")
-  .description("CLI tool 获取 npm 网站的包下载量")
+  .description("CLI tool to fetch npm package download counts")
   .version(package_json.version, "-v, --version", "output the version number");
 
-console.log(
-  "Welcome to npm-counts CLI tool, version:",
-  package_json.version,
-  "\n"
-);
+console.log(`${texts.welcome} ${package_json.version}\n`);
 
 program
-  .command("download")
-  .alias("down")
-  .description("查询流行前端框架 angular react vue 的下载次数")
-  .action(() => {
-    inquirer
-      .prompt([
-        {
-          type: "list",
-          name: "packageName",
-          message: "您想检查哪个框架的下载次数？",
-          choices: ["vue", "react", "angular"],
-        },
-        {
-          type: "list",
-          name: "date",
-          message: "时间范围",
-          choices: ["周", "月", "年"],
-          default: "周",
-        },
-      ])
-      .then(async (answers) => {
-        const spinner = ora("正在查询下载数量...").start();
-        console.log(answers);
+  .command("query [packageName]")
+  .description(texts.commandDownload)
+  .action((packageName) => {
+    const askForPackageName = !packageName;
+    const prompts = [];
+    if (askForPackageName) {
+      prompts.push({
+        type: "list",
+        name: "packageName",
+        message: texts.selectPackage,
+        choices: ["vue", "react", "angular"],
+      });
+    }
 
-        const data = await getDownload(answers.packageName, answers.date);
-        spinner.succeed(
-          `${answers.packageName} 框架的${answers.date}(${data.start}-${data.end})下载量为 ${data.downloads} 次`
-        );
+    prompts.push({
+      type: "list",
+      name: "date",
+      message: texts.selectTimeRange,
+      choices: [
+        { name: language === "zh" ? "周" : "Week", value: "week" },
+        { name: language === "zh" ? "月" : "Month", value: "month" },
+        { name: language === "zh" ? "年" : "Year", value: "year" },
+      ],
+      default: "week",
+    });
+
+    inquirer
+      .prompt(prompts)
+      .then(async (answers) => {
+        const chosenPackageName = packageName || answers.packageName;
+        const spinner = ora(texts.fetchDownload).start();
+        try {
+          const data = await getDownload(chosenPackageName, answers.date);
+          spinner.succeed(
+            texts.successDownload(chosenPackageName, answers.date, data)
+          );
+        } catch (error) {
+          spinner.fail(texts.fetchFailed);
+          console.error(error.message);
+        }
       })
       .catch(() => {
         process.exit(1); // 处理异常后退出
@@ -76,48 +90,83 @@ program
 program
   .command("list")
   .alias("ls")
-  .description("查询 npm 下载量列表")
+  .description("")
   .action(() => {
-    console.log("angular react vue");
-  });
+    const dependencies = package_json.dependencies || {};
+    const devDependencies = package_json.devDependencies || {};
+    const allDependencies = { ...dependencies, ...devDependencies };
+    const modules = Object.keys(allDependencies);
 
-program
-  .command("add")
-  .description("自定义查询任意 npm 包的下载量")
-  .action(() => {
+    if (modules.length === 0) {
+      console.log(texts.noLocalModules);
+      return;
+    }
+
+    // console.log(texts.localModulesHeader);
+    console.log(modules);
+
     inquirer
       .prompt([
         {
-          type: "input",
-          name: "packageName",
-          message: "请输入您想查询的 npm 包名称：",
-          required: true,
-        },
-        {
           type: "list",
           name: "date",
-          message: "请选择时间范围",
-          choices: ["周", "月", "年"],
-          default: "周",
+          message: texts.selectTimeRange,
+          choices: [
+            { name: language === "zh" ? "周" : "Week", value: "week" },
+            { name: language === "zh" ? "月" : "Month", value: "month" },
+            { name: language === "zh" ? "年" : "Year", value: "year" },
+          ],
+          default: "week",
         },
       ])
+      .then(async (answer) => {
+        for (const moduleName of modules) {
+          const spinner = ora(`${texts.fetching} ${moduleName}...`).start();
+          try {
+            const data = await getDownload(moduleName, answer.date);
+            spinner.succeed(
+              `${moduleName}: ${data.downloads} ${texts.downloads}`
+            );
+          } catch (error) {
+            spinner.fail(`${texts.failedToFetch} ${moduleName}`);
+            console.error(error.message);
+          }
+        }
+      });
+  });
+
+program
+  .command("add [packageName]")
+  .description(texts.commandAdd)
+  .action((packageName) => {
+    const askForPackageName = !packageName;
+    const prompts = [];
+
+    if (askForPackageName) {
+      prompts.push({
+        type: "input",
+        name: "packageName",
+        message: `${texts.selectPackage}:`,
+        required: true,
+      });
+    }
+
+    inquirer
+      .prompt(prompts)
       .then(async (answers) => {
-        const spinner = ora("Fetching download counts...").start();
+        const spinner = ora(texts.fetchDownload).start();
         try {
           const data = await getDownload(answers.packageName, answers.date);
-          if (answers.packageName) {
-            spinner.succeed(
-              `在过去的一${answers.date}(${data.start}-${data.end})总下载量为 ${data.downloads} 次`
-            );
-          } else {
-            spinner.succeed(
-              `${answers.packageName} 在过去的一${answers.date}(${data.start}-${data.end})下载量为 ${data.downloads} 次`
-            );
-          }
+          spinner.succeed(
+            texts.successDownload(answers.packageName, answers.date, data)
+          );
         } catch (error) {
-          spinner.fail("Failed to fetch download counts.");
+          spinner.fail(texts.fetchFailed);
           console.error(error.message);
         }
+      })
+      .catch(() => {
+        process.exit(1); // 处理异常后退出
       });
   });
 

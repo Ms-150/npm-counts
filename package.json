@@ -1,21 +1,25 @@
 {
   "name": "npm-counts",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "main": "index.js",
   "type": "module",
   "bin": {
     "npm-counts": "src/index.js"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node ./index.js"
   },
-  "author": "",
-  "license": "ISC",
+  "author": "Ms-150",
+  "license": "MIT",
   "description": "",
   "dependencies": {
     "commander": "^12.1.0",
     "inquirer": "^10.1.8",
     "npm-counts": "^1.0.0",
     "ora": "^8.1.0"
-  }
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "devDependencies": {}
 }

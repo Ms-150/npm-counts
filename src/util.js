@@ -1,12 +1,11 @@
-// 定义映射表
 const dateMap = {
-  周: "last-week",
-  月: "last-month",
-  年: "last-year",
+  week: "last-week",
+  month: "last-month",
+  year: "last-year",
 };
 
-export const getDownload = async (packageName, date) => {
-  const period = dateMap[date];
+export const getDownload = async (packageName, dateKey) => {
+  const period = dateMap[dateKey];
   try {
     const response = await fetch(
       `https://api.npmjs.org/downloads/point/${period}/${packageName}`
@@ -17,7 +16,7 @@ export const getDownload = async (packageName, date) => {
     const data = await response.json();
     return data;
   } catch (error) {
-    console.error("获取下载数据失败:", error.message);
+    console.error("Failed to fetch download data:", error.message);
     throw error;
   }
 };
