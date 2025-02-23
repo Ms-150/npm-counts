@@ -1,25 +1,30 @@
 {
   "name": "npm-counts",
-  "version": "1.0.2",
+  "version": "1.0.5",
   "main": "index.js",
   "type": "module",
   "bin": {
     "npm-counts": "src/index.js"
   },
   "scripts": {
-    "start": "node ./index.js"
+    "start": "node ./index.js",
+    "format": "prettier --write src/"
   },
   "author": "Ms-150",
   "license": "MIT",
   "description": "",
   "dependencies": {
     "commander": "^12.1.0",
-    "inquirer": "^10.1.8",
-    "npm-counts": "^1.0.0",
-    "ora": "^8.1.0"
+    "inquirer": "^10.2.2",
+    "npm-counts": "^1.0.2",
+    "ora": "^8.2.0"
   },
   "engines": {
     "node": ">=14.0.0"
   },
-  "devDependencies": {}
+  "prettier": "prettier-config-standard",
+  "devDependencies": {
+    "prettier": "^3.5.2",
+    "prettier-config-standard": "^7.0.0"
+  }
 }
